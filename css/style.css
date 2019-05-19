@@ -1,0 +1,45 @@
+body {
+  border: 0;
+  padding: 0;
+  background-color: #B6D6CC;
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+}
+
+#leftPanel {
+  height: 100%;
+  max-width: 480px;
+  min-width: 300px;
+  z-index: 1;
+  position: fixed;
+  overflow-x: hidden;
+  left: -290px;
+  top: 0;
+  transition: left 0.5s; 
+}
+#leftPanel:hover {
+  left: 0;
+  background-color: #f1fec6;
+}
+#leftPanel ul {
+  display: none;
+}
+
+#leftPanel a {
+  display: block;
+  /*display: inline-block;*/
+  padding: 10px 10px 10px 20px ;
+  background-color: #74A4BC;
+}
+
+.active {
+  background-color: #90E0F3;
+}
+
+#guide {
+  position: fixed;
+  user-select: none;
+  bottom: 50px;
+  right 50px;
+}

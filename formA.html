@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width" />
+  <link
+  <title></title>
+</head>
+<body>
+  <form action=action_"formA.php" method="post" accept-charset="utf-8" onsubmit="showData(this)" >
+    <label for="">First name</label>
+    <input id="name" type="text" name="name"><br>
+    <label for="">Last name</label>
+    <input id="name" type="text" name="name"><br>
+    <label for="">name</label>
+    <input id="name" type="text" name="name"><br>
+    <label for="">name</label>
+    <input id="name" type="text" name="name"><br>
+  </form>
+  <script type="text/javascript">
+    function showData(form) {
+      // onsubmit="getFormValues(this)"
+      var inputs = form.getElementsByTagName('input');
+      var msg = "";
+      for (var i=0, iLen=inputs.length; i<iLen; i++) {
+        var name = inputs[i].getAttribute('name');
+        if (name == null) {
+          name = inputs[i].getAttribute('id');
+        }
+        var value = inputs[i].value;
+        msg = msg + name + " : " + value + "\n";
+      }
+      alert(msg);
+      return false;
+    }
+  </script>
+</body>
+</html>
