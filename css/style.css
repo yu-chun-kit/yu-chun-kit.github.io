@@ -7,39 +7,61 @@ body {
           box-sizing: border-box;
 }
 
+
 #leftPanel {
   height: 100%;
   max-width: 480px;
   min-width: 300px;
-  z-index: 1;
-  position: fixed;
-  overflow-x: hidden;
-  left: -290px;
-  top: 0;
-  transition: left 0.5s; 
+  position: absolute;
+  /*top: 0;*/
+  left: -300px;
+  transition: left 0.5s;
 }
-#leftPanel:hover {
+#leftPanel.active {
+  left: 0;
+  color: red;
+}
+#leftPanel ul {
+  padding: 0;
+}
+
+#leftPanel ul li {
+  list-style: none;
+  background-color: #74A4BC;
+  font-size: 20px;
+}
+#leftPanel a {
+  padding: 20px 24px;
+  display: block;
+}
+
+#leftPanel .toggle-btn {
+  position: absolute;
+  top: 20px;
+  left: 320px;
+  padding: 10px;
+  background-color: #74A4BC;
+}
+.toggle-btn span {
+  width: 45px;
+  height: 4px;
+  background: #000;
+  display: block;
+  margin-top: 4px;
+}
+.active {
   left: 0;
   background-color: #f1fec6;
 }
-#leftPanel ul {
-  display: none;
-}
 
-#leftPanel a {
-  display: block;
-  /*display: inline-block;*/
-  padding: 10px 10px 10px 20px ;
-  background-color: #74A4BC;
-}
-
-.active {
+.current {
   background-color: #90E0F3;
 }
 
 #guide {
-  position: fixed;
-  user-select: none;
+  /*pointer-events: none;*/
+  position: absolute;
+  /*user-select: none;*/
   bottom: 50px;
-  right 50px;
+  right: 50px;
 }
