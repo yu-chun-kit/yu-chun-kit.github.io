@@ -4,6 +4,6 @@ title:  orig site
 date:   2019-08-11 17:36:12 +0800
 categories: test
 ---
-Attached the [orig site]
+Attached the [orig-site]
 
 [orig-site]: /orig.html
