@@ -1,0 +1,94 @@
+{
+  "main": {
+    "id": "c34c83bf0552c996",
+    "type": "split",
+    "children": [
+      {
+        "id": "dd19114aa41cd3dd",
+        "type": "leaf",
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "2022-07-10-how-to-create-react-package.md",
+            "mode": "source",
+            "source": true
+          }
+        }
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "a462558efb50e730",
+    "type": "split",
+    "children": [
+      {
+        "id": "15d73d808c54644a",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "51bc18921e57e6d7",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "57c609651b8c632e",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "edde9de516160df8",
+    "type": "split",
+    "children": [
+      {
+        "id": "4c6ef93275f1d0d7",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "440f466a1f9fe5e4",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "2022-07-10-how-to-create-react-package.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "active": "dd19114aa41cd3dd",
+  "lastOpenFiles": [
+    "2022-07-10-how-to-create-react-package.md"
+  ]
+}
