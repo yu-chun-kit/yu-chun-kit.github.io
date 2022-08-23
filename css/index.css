@@ -35,6 +35,7 @@
   animation-name: change_color;
   animation-duration: 3s;
   animation-iteration-count: infinite;
+  min-height: 5rem;
 }
 @keyframes change_color {
   0% {background-color: #ff3a20;}
