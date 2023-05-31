@@ -102,3 +102,21 @@ yarn run rollup
 
 
 ```
+
+## add these line to react package.json
+```json
+{
+  "name": "@YOUR_GITHUB_USERNAME/YOUR_REPOSITORY_NAME",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/YOUR_GITHUB_USERNAME"
+  },
+  ...  
+}
+```
+
+%userprofile%\.npmrc or ~/.npmrc
+```
+registry=https://registry.npmjs.org/
+@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com/
+//npm.pkg.github.com/:_authToken=YOUR_AUTH_TOKEN
+```
