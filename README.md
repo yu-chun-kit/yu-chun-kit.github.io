@@ -40,7 +40,7 @@ cp scripts/.env.example scripts/.env
 
 ```bash
 # OpenWebUI API base URL (no trailing slash)
-OPENWEBUI_API_BASE=http://192.168.128.111:3000/api/v1
+OPENWEBUI_API_BASE=http://localhost:3000/api/v1
 
 # Your OpenWebUI API token
 # Get it from: OpenWebUI → Settings → Account → API Key
