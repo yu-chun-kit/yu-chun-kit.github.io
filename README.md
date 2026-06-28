@@ -26,7 +26,7 @@ pnpm run clean
 
 ## AI对话导出工具
 
-这个项目包含一个 UV 管理的 Python CLI，用于将 OpenWebUI 的 AI 对话导出为 Hexo 博客文章。
+这个项目包含一个 UV 管理的 Python CLI，用于将 OpenWebUI 和公开 Gemini 分享对话导出为 Hexo 博客文章。
 
 ### 环境配置
 
@@ -54,6 +54,7 @@ OPENWEBUI_API_TOKEN=your_api_token_here
 **特点**:
 - 使用 UV 管理 Python 依赖
 - 自动列出 OpenWebUI 对话
+- 支持公开 Gemini share 链接导入
 - 支持分页、限制数量、编号选择、预览
 - 显示消息数、分支数、模型、来源日期
 - 生成 Hexo `layout: dialog` 静态文章
@@ -79,6 +80,21 @@ uv run chatblog publish <chat_id> --date 2026-01-15
 
 # 交互模式 - 列出、选择、预览、确认生成
 uv run chatblog interactive
+
+# 从公开 Gemini 分享链接生成文章
+uv run chatblog import-gemini https://gemini.google.com/share/<share_id>
+```
+
+Gemini 导入会默认把对话中的图片下载到 `source/images/gemini/<share-id>/`，并在文章里改用本地 `/images/...` 路径。只想引用文本、不保存图片时：
+
+```bash
+uv run chatblog import-gemini https://gemini.google.com/share/<share_id> --no-download-assets
+```
+
+第一次使用 Gemini 导入时，如果 Playwright 提示浏览器未安装，执行：
+
+```bash
+uv run playwright install chromium
 ```
 
 ### 兼容旧入口

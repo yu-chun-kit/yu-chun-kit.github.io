@@ -45,7 +45,7 @@ def test_render_hexo_post_includes_metadata_front_matter():
     conversation = load_conversation()
     post = render_hexo_post(conversation, override_date="2026-03-01")
 
-    assert "source_provider: openwebui" in post
+    assert 'source_provider: "openwebui"' in post
     assert 'source_chat_id: "chat-123"' in post
     assert "message_count: 4" in post
     assert "branch_count: 1" in post

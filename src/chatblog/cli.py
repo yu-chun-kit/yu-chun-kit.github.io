@@ -8,8 +8,10 @@ from rich.console import Console
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
+from .assets import download_conversation_images
 from .client import OpenWebUIClient
 from .config import Settings, load_settings
+from .gemini import fetch_gemini_share_conversation
 from .models import ChatSummary, Conversation
 from .normalize import normalize_openwebui_chat
 from .render import write_hexo_post
@@ -123,6 +125,24 @@ def publish_command(
     """Generate a Hexo post for one OpenWebUI conversation."""
     path = publish_conversation(chat_id, override_date=date, output=output)
     console.print(f"[green]Generated:[/green] {path}")
+
+
+@app.command("import-gemini")
+def import_gemini_command(
+    url: str = typer.Argument(..., help="Public Gemini share URL."),
+    date: Optional[str] = typer.Option(None, "--date", help="Override post date, e.g. 2026-01-15."),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output Markdown file."),
+    download_assets: bool = typer.Option(True, "--download-assets/--no-download-assets", help="Download Gemini images into source/images."),
+    timeout_ms: int = typer.Option(60_000, "--timeout-ms", min=1_000, help="Browser load timeout."),
+) -> None:
+    """Generate a Hexo post from a public Gemini share URL."""
+    settings = load_settings()
+    conversation = fetch_gemini_share_conversation(url, timeout_ms=timeout_ms)
+    downloaded = download_conversation_images(conversation, settings.repo_root / "source") if download_assets else []
+    path = write_hexo_post(conversation, posts_dir=settings.posts_dir, override_date=date, output=output)
+    console.print(f"[green]Generated:[/green] {path}")
+    if downloaded:
+        console.print(f"[green]Downloaded images:[/green] {len(downloaded)}")
 
 
 def interactive_workflow(limit: int = 15, page: int = 1) -> Path | None:

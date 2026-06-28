@@ -65,11 +65,13 @@ def _format_message(node: DialogNode) -> list[str]:
     avatar = "我" if node.role == "user" else "AI"
     content = process_markdown_content(clean_content(node.content))
 
+    attachments = "".join(_format_attachment(attachment) for attachment in node.attachments)
+
     if role_class == "user":
-        bubble = f'<div class="dialog-bubble">{content}</div>'
+        bubble = f'<div class="dialog-bubble">{content}{attachments}</div>'
     else:
         model_html = f'<div class="dialog-model">{html.escape(node.model_name)}</div>' if node.model_name else ""
-        bubble = f'<div class="dialog-bubble">{model_html}<div class="dialog-content">{content}</div></div>'
+        bubble = f'<div class="dialog-bubble">{model_html}<div class="dialog-content">{content}{attachments}</div></div>'
 
     return [
         f'<div class="dialog-message {role_class}">',
@@ -78,6 +80,19 @@ def _format_message(node: DialogNode) -> list[str]:
         "</div>",
         "",
     ]
+
+
+def _format_attachment(attachment) -> str:
+    alt = html.escape(attachment.alt or attachment.caption or "Conversation image")
+    caption = html.escape(attachment.caption or attachment.alt or "")
+    source = html.escape(attachment.source_url or "")
+    source_link = f' <a href="{source}" target="_blank" rel="noopener">source</a>' if source else ""
+    caption_html = f"<figcaption>{caption}{source_link}</figcaption>" if caption or source_link else ""
+    return (
+        '<figure class="dialog-attachment">'
+        f'<img src="{html.escape(attachment.url)}" alt="{alt}" loading="lazy">'
+        f"{caption_html}</figure>"
+    )
 
 
 def traverse_with_branches(
@@ -161,7 +176,7 @@ def render_front_matter(conversation: Conversation, post_date: datetime) -> list
             "  - AI对话",
             "layout: dialog",
             "css: /css/dialog.css",
-            "source_provider: openwebui",
+            f"source_provider: {yaml_scalar(conversation.source_provider)}",
             f"source_chat_id: {yaml_scalar(conversation.source_chat_id)}",
             f"conversation_created_at: {yaml_scalar(format_dt(conversation.created_at))}",
             f"conversation_updated_at: {yaml_scalar(format_dt(conversation.updated_at))}",

@@ -16,6 +16,13 @@ class ChatSummary(BaseModel):
     updated_at: datetime | None = None
 
 
+class ImageAttachment(BaseModel):
+    url: str
+    alt: str = ""
+    caption: str = ""
+    source_url: str = ""
+
+
 class DialogNode(BaseModel):
     id: str
     role: Role = "unknown"
@@ -24,6 +31,7 @@ class DialogNode(BaseModel):
     children_ids: list[str] = Field(default_factory=list)
     timestamp: datetime | None = None
     model_name: str = ""
+    attachments: list[ImageAttachment] = Field(default_factory=list)
 
 
 class Conversation(BaseModel):

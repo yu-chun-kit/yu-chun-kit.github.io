@@ -146,6 +146,30 @@
   margin-top: 4px;
 }
 
+.dialog-attachment {
+  margin: 14px 0 4px;
+}
+
+.dialog-attachment img {
+  display: block;
+  max-width: min(100%, 520px);
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid #d9e0ea;
+  background: #fff;
+}
+
+.dialog-attachment figcaption {
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.dialog-attachment figcaption a {
+  color: #2f6da5;
+}
+
 /* Branch folding (details element) */
 .dialog-branch {
   margin: 18px 0;
