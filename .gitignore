@@ -2,9 +2,16 @@
 Thumbs.db
 db.json
 *.log
+nul
+.venv/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+reference/
 node_modules/
 public/
 .deploy*/
 _multiconfig.yml
 .env
 scripts/.env
+source/_posts/2026-03-05-贤者时刻的存在主义.md

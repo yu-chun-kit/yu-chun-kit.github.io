@@ -1,0 +1,49 @@
+{
+  "id": "chat-123",
+  "title": "Test **Chat** / Export?",
+  "created_at": 1771747200,
+  "updated_at": 1771750800,
+  "meta": {
+    "tags": ["general", "backup"]
+  },
+  "chat": {
+    "history": {
+      "messages": {
+        "root": {
+          "id": "root",
+          "parentId": null,
+          "childrenIds": ["a1"],
+          "role": "user",
+          "content": "Hello `world`",
+          "timestamp": 1771747200
+        },
+        "a1": {
+          "id": "a1",
+          "parentId": "root",
+          "childrenIds": ["u2", "branch1"],
+          "role": "assistant",
+          "content": "<details type=\"reasoning\">secret</details>Answer with **bold**\n```python\nprint('x')\n```",
+          "timestamp": 1771747210,
+          "modelName": "Test Model"
+        },
+        "u2": {
+          "id": "u2",
+          "parentId": "a1",
+          "childrenIds": [],
+          "role": "user",
+          "content": "Main branch <script>alert(1)</script>",
+          "timestamp": 1771747220
+        },
+        "branch1": {
+          "id": "branch1",
+          "parentId": "a1",
+          "childrenIds": [],
+          "role": "assistant",
+          "content": "Alternative branch",
+          "timestamp": 1771747230,
+          "modelName": "Other Model"
+        }
+      }
+    }
+  }
+}

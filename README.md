@@ -26,11 +26,11 @@ pnpm run clean
 
 ## AI对话导出工具
 
-这个项目包含两个Python脚本，用于将 OpenWebUI 的AI对话导出为 Hexo 博客文章。
+这个项目包含一个 UV 管理的 Python CLI，用于将 OpenWebUI 的 AI 对话导出为 Hexo 博客文章。
 
 ### 环境配置
 
-两个脚本都需要配置文件。复制模板并填写你的OpenWebUI API Token：
+工具需要配置文件。复制模板并填写你的 OpenWebUI API Token：
 
 ```bash
 cp scripts/.env.example scripts/.env
@@ -47,89 +47,66 @@ OPENWEBUI_API_BASE=http://localhost:3000/api/v1
 OPENWEBUI_API_TOKEN=your_api_token_here
 ```
 
-### 脚本1: publish_chat.py（推荐日常使用）
+### 推荐用法: chatblog CLI
 
-**功能**: 交互式选择并发布对话
+**功能**: 列出、预览、选择并生成对话文章
 
 **特点**:
-- 自动列出最近的15个对话
-- 支持编号选择，有预览功能
-- 显示消息数量和内容摘要
-- 支持日期覆盖（可用于发布历史对话）
-- 可选自动git提交
+- 使用 UV 管理 Python 依赖
+- 自动列出 OpenWebUI 对话
+- 支持分页、限制数量、编号选择、预览
+- 显示消息数、分支数、模型、来源日期
+- 生成 Hexo `layout: dialog` 静态文章
+- 默认不保存 raw JSON，也不自动 git commit
 
 **用法**:
 
 ```bash
-# 交互模式 - 列出对话供选择
-cd scripts
-python3 publish_chat.py
+# 安装/同步 Python 依赖
+uv sync
 
-# 直接模式 - 用对话ID直接导出
-python3 publish_chat.py <chat_id>
+# 列出最近10个对话
+uv run chatblog list --limit 10 --page 1
+
+# 查看单个对话摘要
+uv run chatblog show <chat_id>
+
+# 通过对话ID生成文章
+uv run chatblog publish <chat_id>
 
 # 指定日期覆盖（用于发布历史对话）
-python3 publish_chat.py --date 2026-01-15 <chat_id>
+uv run chatblog publish <chat_id> --date 2026-01-15
+
+# 交互模式 - 列出、选择、预览、确认生成
+uv run chatblog interactive
 ```
 
-**交互流程示例**:
-```
-🔍 获取最近对话...
+### 兼容旧入口
 
-📅 最近对话:
-   1. 如何优化Python性能                     (2026-02-22)
-   2. React组件设计讨论                      (2026-02-21)
-   3. Docker部署问题                         (2026-02-20)
-
-选择编号 [1-3]: 1
-
-🔄 获取对话详情: 如何优化Python性能...
-
-📝 预览: 如何优化Python性能
-   消息数: 12
-
-  用户: 最近在处理大数据集时遇到性能问题...
-  AI: 可以从以下几个方面优化: 1.使用pandas的向量化操作...
-
-📅 对话日期: 2026-02-22
-   (直接回车使用对话日期，输入日期如 2026-01-15 覆盖)
-日期: 
-
-确认发布? [Y/n]: y
-
-📝 生成博客文章...
-✅ 已生成: source/_posts/2026-02-22-如何优化Python性能.md
-
-提交到git? [Y/n]: y
-✅ 已提交
-```
-
-### 脚本2: convert_chat.py（直接导出）
-
-**功能**: 通过对话ID直接导出为博客文章
-
-**特点**:
-- 简单直接，适合知道chat_id的情况
-- 快速导出，无交互确认
-- 兼容原有使用习惯
-
-**用法**:
+旧入口仍然保留在 `tools/` 下，但现在只是调用新的 `chatblog` 核心逻辑：
 
 ```bash
-cd scripts
-python3 convert_chat.py <chat_id> [output_file]
+# 交互模式
+python tools/publish_chat.py
 
-# 示例
-python3 convert_chat.py 1d75ee42-34a1-444f-be66-2866a80fdae1
+# 直接模式
+python tools/publish_chat.py <chat_id>
+
+# 日期覆盖
+python tools/publish_chat.py --date 2026-01-15 <chat_id>
+
+# 原 convert_chat.py 用法
+python tools/convert_chat.py <chat_id> [output_file]
 ```
 
 ### 对话显示效果
 
 生成的博客文章使用对话框样式展示，包含以下特性：
 
-- **区分角色**: 用户消息（右侧紫色）、AI消息（左侧灰色）
+- **区分角色**: 用户消息（右侧蓝色）、AI消息（左侧浅色）
 - **显示模型**: AI消息会标注使用的模型名称
 - **支持分支**: 对话分叉（fork）会以折叠方式展示，可展开查看
+- **显示元数据**: 来源、对话日期、模型、消息数、分支数
 - **代码高亮**: 支持代码块的语法高亮
 - **过滤思考**: 自动移除AI的思考过程（`<details type="reasoning">`）
 - **使用对话时间**: 文章日期使用对话实际时间，而非今天
@@ -140,9 +117,10 @@ python3 convert_chat.py 1d75ee42-34a1-444f-be66-2866a80fdae1
 
 ```bash
 # 安全做法
-git add scripts/convert_chat.py scripts/publish_chat.py
+git add tools/convert_chat.py tools/publish_chat.py
+git add src/chatblog pyproject.toml uv.lock
 git add scripts/.env.example  # 只提交模板，不提交真实.env
-git commit -m "feat: add chat publishing scripts"
+git commit -m "feat: add chatblog OpenWebUI publisher"
 ```
 
 ---
@@ -151,11 +129,15 @@ git commit -m "feat: add chat publishing scripts"
 
 ```
 .
-├── scripts/              # Python工具脚本
-│   ├── convert_chat.py   # 直接导出脚本
-│   ├── publish_chat.py   # 交互式导出脚本
+├── tools/                # Python工具兼容入口
+│   ├── convert_chat.py   # 旧入口兼容包装
+│   └── publish_chat.py   # 旧入口兼容包装
+├── scripts/              # Hexo脚本目录，只放Hexo可加载的脚本或配置模板
 │   ├── .env.example      # 配置文件模板
 │   └── .env              # 实际配置文件（gitignore）
+├── src/
+│   └── chatblog/         # OpenWebUI -> Hexo CLI核心
+├── tests/                # Python测试
 ├── source/
 │   ├── _posts/           # 博客文章
 │   └── css/
