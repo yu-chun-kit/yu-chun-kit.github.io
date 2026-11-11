@@ -951,7 +951,9 @@ var used_tl_rss_key = GM_getValue('used_tl_rss_key') === undefined ? '': GM_getV
 var douban_poster_rehost = GM_getValue('douban_poster_rehost') === undefined ? 0: GM_getValue('douban_poster_rehost');
 
 //用来获取TMDB的key，需要使用请自行申请
-var used_tmdb_key = GM_getValue('used_tmdb_key') === undefined ? '0f79586eb9d92afa2b7266f7928b055c': GM_getValue('used_tmdb_key');
+//注意：默认值已清空（原本硬编码了作者的共用 key，会被限流且不该随脚本分发）。
+//请在脚本设置面板填写自己的 TMDB API key（https://www.themoviedb.org/settings/api）。
+var used_tmdb_key = GM_getValue('used_tmdb_key') === undefined ? '': GM_getValue('used_tmdb_key');
 
 //是否匿名，默认开启匿名选项
 var if_uplver = GM_getValue('if_uplver') === undefined ? 1: GM_getValue('if_uplver');
