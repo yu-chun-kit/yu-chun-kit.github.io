@@ -5,8 +5,11 @@ import re
 from datetime import datetime, time
 from pathlib import Path
 
+from markdown_it import MarkdownIt
+
 from .models import Conversation, DialogNode
 from .normalize import parse_timestamp
+from .sanitize import sanitize_html
 
 
 def yaml_scalar(value: str) -> str:
@@ -34,36 +37,34 @@ def clean_content(content: str) -> str:
     return content.strip()
 
 
+_MARKDOWN_RENDERER = MarkdownIt(
+    "commonmark",
+    {"breaks": True, "html": False, "linkify": False, "typographer": False},
+).enable("table")
+
+
 def process_markdown_content(content: str) -> str:
-    escaped = html.escape(content)
-    code_blocks: list[str] = []
+    """Render conversation markdown into the HTML embedded in the post.
 
-    def replace_code_block(match: re.Match[str]) -> str:
-        lang = html.escape((match.group(1) or "").strip())
-        code = match.group(2)
-        code_blocks.append(f'<pre><code class="language-{lang}">{code}</code></pre>')
-        return f"@@CHATBLOG_CODE_BLOCK_{len(code_blocks) - 1}@@"
+    ``html=False`` keeps raw markup coming from the source conversation inert,
+    so a chat export can never smuggle a ``<script>`` into the blog.  ``breaks``
+    mirrors the previous behaviour where a single newline was a line break.
+    """
+    return _MARKDOWN_RENDERER.render(content).strip()
 
-    text = re.sub(r"```([^\n`]*)\n(.*?)```", replace_code_block, escaped, flags=re.DOTALL)
-    text = re.sub(r"`([^`\n]+)`", r"<code>\1</code>", text)
-    text = re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", text)
-    text = re.sub(r"(?<!\*)\*([^*\n]+)\*(?!\*)", r"<em>\1</em>", text)
 
-    chunks: list[str] = []
-    for part in re.split(r"(@@CHATBLOG_CODE_BLOCK_\d+@@)", text):
-        marker = re.fullmatch(r"@@CHATBLOG_CODE_BLOCK_(\d+)@@", part)
-        if marker:
-            chunks.append(code_blocks[int(marker.group(1))])
-        else:
-            chunks.append(part.replace("\n", "<br>"))
-
-    return "".join(chunks)
+def render_node_content(node: DialogNode) -> str:
+    """Turn one stored message into embeddable HTML for the dialog layout."""
+    content = clean_content(node.content)
+    if node.content_format == "html":
+        return sanitize_html(content)
+    return process_markdown_content(content)
 
 
 def _format_message(node: DialogNode) -> list[str]:
     role_class = "user" if node.role == "user" else "ai"
     avatar = "我" if node.role == "user" else "AI"
-    content = process_markdown_content(clean_content(node.content))
+    content = render_node_content(node)
 
     attachments = "".join(_format_attachment(attachment) for attachment in node.attachments)
 
@@ -95,10 +96,71 @@ def _format_attachment(attachment) -> str:
     )
 
 
+BRANCH_PREVIEW_LIMIT = 60
+_TAG_RE = re.compile(r"<[^>]+>")
+_MARKDOWN_MARK_RE = re.compile(r"[*_`~>#]+")
+
+
+def preview_text(node: DialogNode | None, limit: int = BRANCH_PREVIEW_LIMIT) -> str:
+    """Short, markup-free summary of a message, used as a branch label."""
+    if node is None:
+        return "（空訊息）"
+
+    text = _TAG_RE.sub(" ", clean_content(node.content))
+    text = _MARKDOWN_MARK_RE.sub("", text)
+    text = " ".join(text.split())
+    if len(text) > limit:
+        text = text[:limit].rstrip() + "..."
+    return text or "（空訊息）"
+
+
+def render_branch_group(
+    conversation: Conversation,
+    children: list[str],
+    visited: set[str],
+    depth: int,
+) -> list[str]:
+    """Render every alternative continuation of one divergence point.
+
+    The first child stays inline as the main line; the others become collapsed
+    blocks.  Numbering is ``分支 N/總數`` so nested divergences cannot produce
+    two different blocks that both claim to be "分支 2".
+    """
+    total = len(children)
+    nested_class = " dialog-branch-nested" if depth > 0 else ""
+    lines = [
+        '<div class="dialog-branch-group">',
+        f'<div class="dialog-branch-note">此處有 {total} 個分支：以下接續分支 1/{total}'
+        f"（主線），其餘 {total - 1} 個分支已摺疊展開於此。</div>",
+    ]
+
+    for index, child_id in enumerate(children[1:], start=2):
+        branch_lines = traverse_with_branches(conversation, child_id, set(visited), depth + 1)
+        if not any(line.strip() for line in branch_lines):
+            continue
+
+        child = conversation.messages.get(child_id)
+        label = f"分支 {index}/{total}"
+        if depth > 0:
+            label += f"（嵌套第 {depth + 1} 層）"
+
+        lines.append(f'<details class="dialog-branch{nested_class}">')
+        lines.append(f"<summary>{html.escape(label)}：{html.escape(preview_text(child))}</summary>")
+        lines.append('<div class="dialog-branch-content">')
+        lines.extend(branch_lines)
+        lines.append("</div>")
+        lines.append("</details>")
+        lines.append("")
+
+    lines.append("</div>")
+    return lines
+
+
 def traverse_with_branches(
     conversation: Conversation,
     message_id: str,
     visited: set[str] | None = None,
+    depth: int = 0,
 ) -> list[str]:
     if visited is None:
         visited = set()
@@ -113,32 +175,90 @@ def traverse_with_branches(
     if clean_content(node.content):
         lines.extend(_format_message(node))
 
-    children = node.children_ids
+    children = list(node.children_ids)
     if not children:
         return lines
 
-    lines.extend(traverse_with_branches(conversation, children[0], visited))
+    # Divergence points are rendered where they happen: the collapsed branches
+    # sit next to the message that spawned them instead of trailing the whole
+    # conversation on the main line.
+    if len(children) > 1:
+        lines.extend(render_branch_group(conversation, children, visited, depth))
 
-    branch_number = 2
-    for child_id in children[1:]:
-        branch_lines = traverse_with_branches(conversation, child_id, set(visited))
+    lines.extend(traverse_with_branches(conversation, children[0], visited, depth))
+    return lines
+
+
+def tree_message_ids(conversation: Conversation, root_id: str) -> set[str]:
+    """Every message id reachable from ``root_id`` (branches included)."""
+    seen: set[str] = set()
+    stack = [root_id]
+    while stack:
+        message_id = stack.pop()
+        if message_id in seen or message_id not in conversation.messages:
+            continue
+        seen.add(message_id)
+        stack.extend(conversation.messages[message_id].children_ids)
+    return seen
+
+
+def root_ids(conversation: Conversation) -> list[str]:
+    """Message ids that start a tree (no parent, or a parent that is missing).
+
+    OpenWebUI creates an extra root when a *user* message is edited (or a
+    conversation is restarted): the edited prompt becomes a sibling tree of the
+    original one.  Rendering only ``conversation.root_id`` used to drop those
+    messages entirely.
+    """
+    return [
+        message_id
+        for message_id, node in conversation.messages.items()
+        if node.parent_id is None or node.parent_id not in conversation.messages
+    ]
+
+
+def render_extra_roots(conversation: Conversation, reachable: set[str]) -> list[str]:
+    """Render additional root trees (edited prompts) as collapsed blocks."""
+    pending = [mid for mid in root_ids(conversation) if mid not in reachable]
+    if not pending:
+        return []
+
+    lines = [
+        '<div class="dialog-branch-group">',
+        f'<div class="dialog-branch-note">此對話另有 {len(pending)} 段從頭開始的分支'
+        "（訊息編輯或重新開始），已摺疊如下。</div>",
+    ]
+
+    handled = set(reachable)
+    total = len(pending)
+    for index, root_id in enumerate(pending, start=1):
+        if root_id in handled:
+            continue
+        node = conversation.messages.get(root_id)
+        branch_lines = traverse_with_branches(conversation, root_id, set(handled), depth=1)
+        handled |= tree_message_ids(conversation, root_id)
         if not any(line.strip() for line in branch_lines):
             continue
 
-        child = conversation.messages.get(child_id)
-        preview = clean_content(child.content if child else "")[:50]
-        if len(preview) == 50:
-            preview += "..."
-
-        lines.append('<details class="dialog-branch">')
-        lines.append(f"<summary>分支 {branch_number}: {html.escape(preview)}</summary>")
+        label = f"另一段對話 {index}/{total}"
+        lines.append('<details class="dialog-branch dialog-branch-nested">')
+        lines.append(f"<summary>{html.escape(label)}：{html.escape(preview_text(node))}</summary>")
         lines.append('<div class="dialog-branch-content">')
         lines.extend(branch_lines)
         lines.append("</div>")
         lines.append("</details>")
         lines.append("")
-        branch_number += 1
 
+    lines.append("</div>")
+    return lines
+
+
+def render_conversation_body(conversation: Conversation) -> list[str]:
+    """Walk every tree in the chat: the main line, its branches and extra roots."""
+    visited: set[str] = set()
+    lines = traverse_with_branches(conversation, conversation.root_id, visited)
+    reachable = tree_message_ids(conversation, conversation.root_id)
+    lines.extend(render_extra_roots(conversation, reachable))
     return lines
 
 
@@ -224,7 +344,7 @@ def render_hexo_post(conversation: Conversation, override_date: str | None = Non
     )
     lines.extend(render_metadata_header(conversation))
     lines.extend(['<div class="dialog-container">', ""])
-    lines.extend(traverse_with_branches(conversation, conversation.root_id))
+    lines.extend(render_conversation_body(conversation))
     lines.extend(["</div>", ""])
     return "\n".join(lines)
 
@@ -238,5 +358,8 @@ def write_hexo_post(
     post_date = parse_override_date(override_date) or conversation.display_date or datetime.now()
     target = output or default_output_path(conversation, posts_dir, post_date)
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(render_hexo_post(conversation, override_date=override_date), encoding="utf-8")
+    # newline="\n" keeps generated posts identical on Windows and Linux instead
+    # of depending on the platform default line ending.
+    with target.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(render_hexo_post(conversation, override_date=override_date))
     return target

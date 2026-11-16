@@ -1,171 +1,130 @@
 # yu-chun-kit.github.io
 
-基于 [Hexo](https://hexo.io/) 的个人博客，使用 [landscape](https://github.com/hexojs/hexo-theme-landscape) 主题。
+[繁體中文](README.md) · [English](README.en.md) · [日本語](README.ja.md)
 
-🔗 **访问地址**: https://yu-chun-kit.github.io
+以 [Hexo](https://hexo.io/) 建置的個人部落格，使用 Landscape 主題，發佈網址為
+<https://yu-chun-kit.github.io>。
 
----
+## 技術棧
 
-## 开发命令
+- Hexo 8.1.1 與 `hexo-theme-landscape`
+- Node.js（GitHub Actions 使用 Node.js 20）
+- npm 或 pnpm 管理 JavaScript 相依套件
+- 選用的 `chatblog` Python CLI（Python 3.11 以上），可將 OpenWebUI 或公開 Gemini
+  對話轉成 Hexo 文章
+
+## 本機開發
+
+先安裝 Node.js 20，再安裝相依套件：
 
 ```bash
-# 安装依赖
-pnpm install
-
-# 本地开发服务器
-pnpm run server
-
-# 构建（生成到 ./public）
-pnpm run build
-
-# 清理缓存
-pnpm run clean
+pnpm install          # 或：npm install
+pnpm run server       # 或：npm run server，開啟 http://localhost:4000
+pnpm run build        # 或：npm run build，輸出到 ./public
+pnpm run clean        # 或：npm run clean，清理 Hexo 快取與輸出
 ```
 
----
+`public/` 是建置產物，已列入 `.gitignore`，不應提交。
 
-## AI对话导出工具
-
-这个项目包含一个 UV 管理的 Python CLI，用于将 OpenWebUI 和公开 Gemini 分享对话导出为 Hexo 博客文章。
-
-### 环境配置
-
-工具需要配置文件。复制模板并填写你的 OpenWebUI API Token：
+若要使用 `chatblog`，請先準備 Python 3.11 以上與 [uv](https://docs.astral.sh/uv/)，
+再執行 `uv sync`。將 `scripts/.env.example` 複製為 `scripts/.env`，填入
+`OPENWEBUI_API_BASE` 與 `OPENWEBUI_API_TOKEN` 後，可使用：
 
 ```bash
-cp scripts/.env.example scripts/.env
-```
-
-编辑 `scripts/.env`：
-
-```bash
-# OpenWebUI API base URL (no trailing slash)
-OPENWEBUI_API_BASE=http://localhost:3000/api/v1
-
-# Your OpenWebUI API token
-# Get it from: OpenWebUI → Settings → Account → API Key
-OPENWEBUI_API_TOKEN=your_api_token_here
-```
-
-### 推荐用法: chatblog CLI
-
-**功能**: 列出、预览、选择并生成对话文章
-
-**特点**:
-- 使用 UV 管理 Python 依赖
-- 自动列出 OpenWebUI 对话
-- 支持公开 Gemini share 链接导入
-- 支持分页、限制数量、编号选择、预览
-- 显示消息数、分支数、模型、来源日期
-- 生成 Hexo `layout: dialog` 静态文章
-- 默认不保存 raw JSON，也不自动 git commit
-
-**用法**:
-
-```bash
-# 安装/同步 Python 依赖
-uv sync
-
-# 列出最近10个对话
 uv run chatblog list --limit 10 --page 1
-
-# 查看单个对话摘要
 uv run chatblog show <chat_id>
-
-# 通过对话ID生成文章
 uv run chatblog publish <chat_id>
-
-# 指定日期覆盖（用于发布历史对话）
-uv run chatblog publish <chat_id> --date 2026-01-15
-
-# 交互模式 - 列出、选择、预览、确认生成
 uv run chatblog interactive
-
-# 从公开 Gemini 分享链接生成文章
 uv run chatblog import-gemini https://gemini.google.com/share/<share_id>
+uv run chatblog import-gemini https://share.gemini.google/<short_id> --force-assets
 ```
 
-Gemini 导入会默认把对话中的图片下载到 `source/images/gemini/<share-id>/`，并在文章里改用本地 `/images/...` 路径。只想引用文本、不保存图片时：
+`python -m chatblog`（或 `uv run python -m chatblog`）與 `chatblog` 指令等價。Gemini
+匯入需要 Playwright 的 Chromium：`uv run playwright install chromium`。
+
+若 OpenWebUI 的 API token 過期或不想申請 token，可直接讀取 NAS 上的資料庫
+（與 `openwebui-local-reader` 相同做法：SSH 進容器後唯讀查詢 SQLite）：
 
 ```bash
-uv run chatblog import-gemini https://gemini.google.com/share/<share_id> --no-download-assets
+uv run chatblog publish <chat_id> --source auto    # 先試 API，401 就改用本機資料庫
+uv run chatblog publish <chat_id> --source ssh     # 走 johnsons_nas → docker exec
+uv run chatblog publish <chat_id> --source sqlite  # 讀本機／SMB 的 webui.db
+uv run chatblog list --limit 20 --source ssh
 ```
 
-第一次使用 Gemini 导入时，如果 Playwright 提示浏览器未安装，执行：
+可用 `CHATBLOG_OWUI_SSH_HOST`、`CHATBLOG_OWUI_CONTAINER`、`CHATBLOG_OWUI_DB_PATH`、
+`CHATBLOG_OWUI_LOCAL_DB`、`CHATBLOG_OWUI_UPLOADS` 覆寫預設值。
 
-```bash
-uv run playwright install chromium
+### Studio 自動分類
+
+執行 `uv run chatblog gui`，開啟本機的 Chatblog Studio。於 `.env` 或 `scripts/.env`
+設定 `GEMINI_API_KEY` 後，自動分類會使用 `gemini-decision-1`：
+
+```dotenv
+GEMINI_API_KEY=你的金鑰
+CHATBLOG_CLASSIFIER=gemini
+CHATBLOG_DECISION_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+CHATBLOG_DECISION_MODEL=gemini-decision-1
 ```
 
-### 兼容旧入口
+使用反代時，將 `CHATBLOG_DECISION_BASE_URL` 改成自己的反代網址。也接受以
+`/v1beta/openai` 結尾的網址，程式會改用同一反代的原生 `/v1beta/decisions` 路徑。
+修改 `.env` 後重啟 Studio；在「設定」可看到目前分類模型，並用「測試連線」驗證。
+勾選對話後按「自動分類」即可產生標籤。設定金鑰後，分類會將標題、metadata 和
+最多約 9,000 字元的對話節錄傳給模型，沿用先判定領域、再細分主題的兩批問題。
+既有標籤要重新勾選分類才會更新。沒有金鑰或模型請求失敗時會使用關鍵詞規則。
 
-旧入口仍然保留在 `tools/` 下，但现在只是调用新的 `chatblog` 核心逻辑：
+若要切回原本的 OpenJev，設定 `CHATBLOG_CLASSIFIER=openjev`，並保留原本的
+`OPENJEV_API_KEY`（或 `CODIV_API_KEY`）等設定。金鑰請只放 `.env`，不要填進範例檔。
 
-```bash
-# 交互模式
-python tools/publish_chat.py
+### chatblog 的對話匯入流程
 
-# 直接模式
-python tools/publish_chat.py <chat_id>
+- OpenWebUI 對話以 Markdown 儲存，由 `chatblog.render` 以 markdown-it 轉成 HTML。
+- Gemini 分享頁是 Angular 應用，需以 Playwright 抓取；答案的 HTML 只保留
+  「對話用得到」的標籤（標題、清單、表格、粗體、程式碼），citation chip、
+  follow-up 按鈕等 UI 雜訊會被移除（見 `chatblog.sanitize`）。
+- 圖片附件下載到 `source/images/<provider>/<chat_id>/`；重複匯入會沿用既有檔案，
+  加上 `--force-assets` 才會重新下載。
+- 分支（OpenWebUI 的重新生成／編輯訊息）會在分歧點就地插入提示，其餘分支收合成
+  `分支 N/總數` 區塊；若一段對話有多個根節點（編輯使用者訊息造成），額外的樹會以
+  「另一段對話」收合呈現，不會漏掉訊息。
+- 產生的文章使用 `layout: dialog` 與 `/css/dialog.css`，以對話泡泡形式呈現。
 
-# 日期覆盖
-python tools/publish_chat.py --date 2026-01-15 <chat_id>
+`chatblog` 會從工作目錄往上尋找含 `_config.yml` 與 `package.json` 的目錄作為 repo
+根目錄，也可用 `CHATBLOG_REPO_ROOT`、`CHATBLOG_POSTS_DIR` 環境變數覆寫。
 
-# 原 convert_chat.py 用法
-python tools/convert_chat.py <chat_id> [output_file]
-```
+## 目錄結構
 
-### 对话显示效果
-
-生成的博客文章使用对话框样式展示，包含以下特性：
-
-- **区分角色**: 用户消息（右侧蓝色）、AI消息（左侧浅色）
-- **显示模型**: AI消息会标注使用的模型名称
-- **支持分支**: 对话分叉（fork）会以折叠方式展示，可展开查看
-- **显示元数据**: 来源、对话日期、模型、消息数、分支数
-- **代码高亮**: 支持代码块的语法高亮
-- **过滤思考**: 自动移除AI的思考过程（`<details type="reasoning">`）
-- **使用对话时间**: 文章日期使用对话实际时间，而非今天
-
-### 安全提示
-
-⚠️ **重要**: `scripts/.env` 文件包含敏感信息，已被 `.gitignore` 忽略，**不要提交到GitHub**。
-
-```bash
-# 安全做法
-git add tools/convert_chat.py tools/publish_chat.py
-git add src/chatblog pyproject.toml uv.lock
-git add scripts/.env.example  # 只提交模板，不提交真实.env
-git commit -m "feat: add chatblog OpenWebUI publisher"
-```
-
----
-
-## 目录结构
-
-```
+```text
 .
-├── tools/                # Python工具兼容入口
-│   ├── convert_chat.py   # 旧入口兼容包装
-│   └── publish_chat.py   # 旧入口兼容包装
-├── scripts/              # Hexo脚本目录，只放Hexo可加载的脚本或配置模板
-│   ├── .env.example      # 配置文件模板
-│   └── .env              # 实际配置文件（gitignore）
-├── src/
-│   └── chatblog/         # OpenWebUI -> Hexo CLI核心
-├── tests/                # Python测试
-├── source/
-│   ├── _posts/           # 博客文章
-│   └── css/
-│       └── dialog.css    # 对话样式
-├── _config.yml           # Hexo配置
-└── ...
+├── source/_posts/              # Markdown 文章
+├── source/css/                 # 文章或網站樣式
+├── source/images/              # 圖片資產
+├── src/chatblog/               # 對話匯入 CLI 的 Python 原始碼
+├── tools/                      # 舊版 CLI 入口包裝
+├── tests/                      # chatblog 測試
+├── themes/                     # 專案內主題檔案
+├── _config.yml                 # Hexo 設定
+├── package.json                # Node.js 腳本與相依套件
+└── .github/workflows/pages.yml # GitHub Pages 工作流程
 ```
 
----
+## 撰寫與貢獻流程
+
+1. 在 `source/_posts/` 新增 Markdown 檔，使用 front matter 設定 `title`、`date`、
+   `tags` 與 `categories`。
+2. 執行 `pnpm run server`（或 `npm run server`）預覽，並以 `pnpm run build`（或
+   `npm run build`）確認可產生網站。
+3. 提交變更並推送至 `master`，讓部署工作流程處理後續作業。
+
+修改 `chatblog` 時，可用 `uv run pytest` 執行 `tests/` 中的測試；請勿提交含有真實
+Token 的 `scripts/.env`。
 
 ## 部署
 
-本项目使用 GitHub Actions 自动部署：
-- 推送到 `master` 分支自动触发构建和部署
-- 无需手动操作
+推送至 `master` 會觸發 `.github/workflows/pages.yml`：工作流程使用 Node.js 20、執行
+`npm install` 與 `npm run build`，再將 `public/` 上傳並部署至 GitHub Pages。
+
+## 授權
+
+授權資訊請參閱 [LICENSE](LICENSE)。

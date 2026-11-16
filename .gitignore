@@ -14,4 +14,12 @@ public/
 _multiconfig.yml
 .env
 scripts/.env
+# chatblog studio state (ledger, catalogue cache, local settings)
+.chatblog/
+# Local-only conversation backups (kept out of the repository / deployment)
 source/_posts/2026-03-05-贤者时刻的存在主义.md
+source/_posts/2026-09-24-解析黄果短剧的黑灰产模式.md
+source/images/gemini/de5a44c3ef54/
+
+# chatblog private (auto-managed)
+source/_posts/2026-10-10-后现代社会共识.md

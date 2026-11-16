@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chatblog Studio</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">✦</span>
+    <div>
+      <h1>Chatblog Studio</h1>
+      <p>對話 → Hexo 文章</p>
+    </div>
+  </div>
+  <div class="sources" id="sources"></div>
+  <div class="top-actions">
+    <button class="btn ghost" id="refreshBtn" title="重新讀取兩個來源">↻ 重新整理</button>
+    <button class="btn ghost" id="settingsBtn" title="設定">設定</button>
+  </div>
+</header>
+
+<section class="toolbar">
+  <input id="search" class="search" type="search" placeholder="搜尋標題或標籤…" autocomplete="off">
+  <div class="segmented" id="providerFilter">
+    <button data-value="all" class="active">全部</button>
+    <button data-value="openwebui">OpenWebUI</button>
+    <button data-value="gemini">Gemini</button>
+  </div>
+  <div class="segmented" id="statusFilter">
+    <button data-value="all" class="active">全部</button>
+    <button data-value="new">未上傳</button>
+    <button data-value="published">已上傳</button>
+    <button data-value="stale">有更新</button>
+  </div>
+  <select id="tagFilter" class="select"><option value="">所有標籤</option></select>
+  <select id="sortSelect" class="select">
+    <option value="updated_desc">最新在前</option>
+    <option value="updated_asc">最舊在前</option>
+    <option value="title">依標題</option>
+  </select>
+</section>
+
+<main class="table">
+  <div class="thead">
+    <label class="check"><input type="checkbox" id="selectAll"></label>
+    <span>對話</span>
+    <span>日期</span>
+    <span>標籤</span>
+    <span>狀態</span>
+  </div>
+  <div id="rows" class="rows"></div>
+  <div id="empty" class="empty" hidden>
+    <p>還沒有對話。</p>
+    <p class="muted">按「重新整理」讀取 OpenWebUI 與 Gemini。</p>
+  </div>
+</main>
+
+<footer class="actionbar">
+  <div class="count"><strong id="selectedCount">0</strong> 個已選 <span class="muted" id="visibleCount"></span></div>
+  <div class="bar-actions">
+    <button class="btn ghost" id="selectAllVisible">全選顯示</button>
+    <button class="btn ghost" id="clearSelection">清除</button>
+    <button class="btn ghost" id="classifyBtn">✦ 自動分類</button>
+    <button class="btn primary" id="publishBtn">生成文章</button>
+  </div>
+</footer>
+
+<div class="jobcard" id="jobCard" hidden>
+  <div class="job-head">
+    <span id="jobTitle">進行中…</span>
+    <button class="iconbtn" id="jobClose" title="收起">×</button>
+  </div>
+  <div class="progress"><div class="bar" id="jobBar"></div></div>
+  <div class="job-meta" id="jobMeta"></div>
+  <div class="job-items" id="jobItems"></div>
+  <button class="btn ghost small" id="jobCancel">取消</button>
+</div>
+
+<dialog id="settingsDialog" class="dialog">
+  <form method="dialog" id="settingsForm">
+    <h2>設定</h2>
+
+    <fieldset>
+      <legend>自動分類模型</legend>
+      <div class="classifier-heading">
+        <strong id="classifierName">讀取模型中…</strong>
+        <span id="classifierKeyStatus" class="classifier-status"></span>
+      </div>
+      <div id="geminiDecisionSettings" hidden>
+        <label class="field">
+          <span>模型 ID</span>
+          <input name="classifier_model" readonly>
+        </label>
+        <label class="field">
+          <span>API 網址／反代</span>
+          <input name="classifier_base_url" readonly>
+        </label>
+        <p class="hint classifier-note">金鑰已從本機 .env 載入；模型與網址也由此設定。</p>
+      </div>
+      <div id="openjevSettings" hidden>
+      <label class="field">
+        <span>API Base URL</span>
+        <input name="openjev_base_url" placeholder="https://api.codiv.ai">
+      </label>
+      <label class="field">
+        <span>API key <em id="keyHint" class="muted"></em></span>
+        <input name="openjev_api_key" type="password" placeholder="sk-codiv-…（留空 = 保留現有）">
+      </label>
+      <label class="field">
+        <span>Model</span>
+        <input name="openjev_model" placeholder="openjev-latest">
+      </label>
+      </div>
+      <div class="row-inline">
+        <button type="button" class="btn ghost small" id="testClassifier">測試 Gemini 連線</button>
+        <span id="classifierStatus" class="muted" role="status"></span>
+      </div>
+      <p class="hint">模型連線失敗時會使用關鍵詞規則分類。</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Gemini 對話來源（瀏覽器登入）</legend>
+      <label class="field">
+        <span>Profile 路徑</span>
+        <input name="gemini_profile" readonly>
+      </label>
+      <label class="field">
+        <span>除錯埠</span>
+        <input name="gemini_port" type="number" min="1024" max="65535">
+      </label>
+      <label class="check-inline">
+        <input type="checkbox" name="gemini_headless"> 掃描時用無頭模式（較不明顯，但 Google 偶爾會要求驗證）
+      </label>
+      <div class="row-inline">
+        <button type="button" class="btn ghost small" id="geminiLogin">登入 Gemini</button>
+        <button type="button" class="btn ghost small" id="geminiCheck">檢查登入</button>
+        <span id="geminiStatus" class="muted"></span>
+      </div>
+      <p class="hint">登入會開一個正常 Chrome 視窗；登入完成後關閉它，再按「檢查登入」。這個 profile 與你日常 Chrome 隔離。</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>連結與來源</legend>
+      <label class="field">
+        <span>用哪個瀏覽器開連結</span>
+        <select name="open_browser">
+          <option value="auto">自動（LAN → Firefox，其餘 → Chrome）</option>
+          <option value="firefox">一律 Firefox</option>
+          <option value="chrome">一律 Chrome</option>
+          <option value="system">系統預設</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>OpenWebUI 網址（給連結用）</span>
+        <input name="owui_base_url" placeholder="http://192.168.128.111:3000">
+      </label>
+    </fieldset>
+
+    <p class="hint" id="pathsHint"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" id="settingsCancel">取消</button>
+      <button type="button" class="btn primary" id="settingsSave">儲存</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="publishDialog" class="dialog small">
+  <form method="dialog">
+    <h2>生成文章</h2>
+    <p id="publishSummary" class="muted"></p>
+    <label class="check-inline"><input type="checkbox" id="optPrivate"> 私人（加入 .gitignore，只留本地）</label>
+    <label class="check-inline"><input type="checkbox" id="optForce"> 重新下載圖片</label>
+    <label class="field">
+      <span>覆寫文章日期（留空 = 用對話日期）</span>
+      <input type="date" id="optDate">
+    </label>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" id="publishCancel">取消</button>
+      <button type="button" class="btn primary" id="publishConfirm">開始生成</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" hidden></div>
+<script src="/app.js"></script>
+</body>
+</html>

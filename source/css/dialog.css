@@ -212,6 +212,31 @@
   margin-left: 8px;
 }
 
+/* Divergence points: one note per fork, one collapsed block per branch */
+.dialog-branch-group {
+  margin: 6px 0 18px;
+}
+
+.dialog-branch-note {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-left: 3px solid #94a3b8;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dialog-branch-nested {
+  margin-left: 14px;
+  background: #fbfdff;
+}
+
+.dialog-branch-nested summary::before {
+  content: "sub-branch";
+}
+
 .dialog-branch .dialog-message {
   margin-bottom: 12px;
 }
@@ -270,6 +295,93 @@
 
 .dialog-bubble a:hover {
   opacity: 1;
+}
+
+/* Rich message bodies (markdown for OpenWebUI, sanitized HTML for Gemini) */
+.dialog-content > :first-child,
+.dialog-bubble > :first-child {
+  margin-top: 0;
+}
+
+.dialog-content > :last-child,
+.dialog-bubble > :last-child {
+  margin-bottom: 0;
+}
+
+.dialog-content p {
+  margin: 0 0 10px;
+}
+
+.dialog-content h1,
+.dialog-content h2,
+.dialog-content h3,
+.dialog-content h4,
+.dialog-content h5,
+.dialog-content h6 {
+  margin: 16px 0 6px;
+  font-size: 1.02em;
+  font-weight: 700;
+  line-height: 1.45;
+  opacity: 0.95;
+}
+
+.dialog-content ul,
+.dialog-content ol {
+  margin: 6px 0 10px;
+  padding-left: 22px;
+}
+
+.dialog-content li {
+  margin: 4px 0;
+}
+
+.dialog-content li > p:last-child {
+  margin-bottom: 0;
+}
+
+.dialog-content blockquote {
+  margin: 10px 0;
+  padding: 2px 12px;
+  border-left: 3px solid #cbd5e1;
+  color: #475569;
+}
+
+.dialog-message.user .dialog-content blockquote {
+  border-left-color: rgba(255, 255, 255, 0.5);
+  color: inherit;
+}
+
+.dialog-content hr {
+  margin: 14px 0;
+  border: 0;
+  border-top: 1px solid #d9e0ea;
+}
+
+.dialog-content table {
+  width: 100%;
+  margin: 10px 0;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.dialog-content th,
+.dialog-content td {
+  padding: 6px 10px;
+  border: 1px solid #d9e0ea;
+  text-align: left;
+}
+
+.dialog-content th {
+  background: #f1f5f9;
+}
+
+.dialog-message.user .dialog-content th,
+.dialog-message.user .dialog-content td {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.dialog-message.user .dialog-content th {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* Mobile responsiveness */

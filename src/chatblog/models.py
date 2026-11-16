@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 
 Role = Literal["user", "assistant", "system", "unknown"]
+ContentFormat = Literal["markdown", "html"]
 
 
 class ChatSummary(BaseModel):
@@ -27,6 +28,9 @@ class DialogNode(BaseModel):
     id: str
     role: Role = "unknown"
     content: str = ""
+    #: ``markdown`` content is rendered by chatblog, ``html`` content is
+    #: sanitized and embedded verbatim (Gemini rewrites its answers as HTML).
+    content_format: ContentFormat = "markdown"
     parent_id: str | None = None
     children_ids: list[str] = Field(default_factory=list)
     timestamp: datetime | None = None
